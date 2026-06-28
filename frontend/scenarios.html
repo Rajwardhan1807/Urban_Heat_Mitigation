@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compare urban cooling intervention scenarios — tree planting, cool roofs, water bodies, and reflective pavements.">
+    <title>Scenario Comparison — Urban Heat Mitigation</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Our CSS -->
+    <link rel="stylesheet" href="/css/styles.css">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <dashboard-layout active-tab="scenarios">
+        <!-- ========== PAGE CONTENT ========== -->
+        <div class="page-content">
+            <div class="page-header">
+                <h1><i data-lucide="leaf" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Cooling Intervention Scenarios</h1>
+                <p>Compare different urban cooling strategies and their estimated temperature reduction. Each scenario modifies relevant features and re-predicts Land Surface Temperature using our trained XGBoost model.</p>
+            </div>
+
+            <!-- Scenario Cards Grid -->
+            <div class="scenario-grid" id="scenario-grid">
+                <!-- Populated by JavaScript -->
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 16px;">Loading scenario data...</p>
+                </div>
+            </div>
+
+            <!-- Comparison Chart -->
+            <div class="comparison-section">
+                <h2 style="color: var(--deep-blue);"><i data-lucide="bar-chart-2" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Scenario Comparison</h2>
+                <p style="color: var(--mid); margin-bottom: 24px; font-size: 14px;">
+                    Average and maximum temperature reduction across all cooling interventions.
+                </p>
+                <div class="chart-container">
+                    <canvas id="comparison-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Methodology Note -->
+            <div class="comparison-section">
+                <h2 style="color: var(--deep-blue);"><i data-lucide="microscope" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Methodology</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px;">
+                    <div>
+                        <h4 style="margin-bottom: 8px;">How It Works</h4>
+                        <p style="font-size: 13px; color: var(--mid); line-height: 1.7;">
+                            Each scenario modifies specific input features (NDVI, albedo, NDWI) for eligible grid cells,
+                            then runs the trained XGBoost model to predict the new LST. The difference (ΔT) shows the
+                            estimated cooling effect. Only physically plausible perturbations are applied based on the
+                            PRD's intervention parameterization table.
+                        </p>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom: 8px;">Feature Perturbations</h4>
+                        <table class="zone-table" style="font-size: 12px;">
+                            <thead>
+                                <tr>
+                                    <th>Intervention</th>
+                                    <th>Feature Changed</th>
+                                    <th>Delta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><i data-lucide="trees" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Urban Greening</td><td>NDVI</td><td>+0.30</td></tr>
+                                <tr><td><i data-lucide="home" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Cool Roofs</td><td>Albedo</td><td>+0.25</td></tr>
+                                <tr><td><i data-lucide="sun" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Reflective Pavements</td><td>Albedo</td><td>+0.15</td></tr>
+                                <tr><td><i data-lucide="leaf" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Green Roofs</td><td>NDVI, Albedo</td><td>+0.15, +0.05</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </dashboard-layout>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/layout.js"></script>
+    <script src="/js/map.js"></script>
+    <script src="/js/charts.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        const SCENARIO_META = {
+            urban_greening: { icon: '<i data-lucide="trees" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>', cardClass: 'greening' },
+            cool_roofs: { icon: '<i data-lucide="home" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>', cardClass: 'cool-roofs' },
+
+            reflective_pavements: { icon: '<i data-lucide="sun" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>', cardClass: 'pavements' },
+            green_roofs: { icon: '<i data-lucide="leaf" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>', cardClass: 'green-roofs' },
+        };
+
+        async function loadScenarios() {
+            try {
+                const response = await fetch('/api/scenarios/compare');
+                const data = await response.json();
+
+                if (!data.scenarios || data.scenarios.length === 0) {
+                    document.getElementById('scenario-grid').innerHTML =
+                        '<div class="empty-state" style="grid-column: 1/-1;"><p>No scenario data available. Run the pipeline first.</p></div>';
+                    return;
+                }
+
+                renderScenarioCards(data.scenarios);
+                ChartsModule.createComparisonChart('comparison-chart', data.scenarios);
+            } catch (err) {
+                console.error('Failed to load scenarios:', err);
+                document.getElementById('scenario-grid').innerHTML =
+                    '<div class="empty-state" style="grid-column: 1/-1;"><p>Failed to load scenario data. Is the server running?</p></div>';
+            }
+        }
+
+        function renderScenarioCards(scenarios) {
+            const grid = document.getElementById('scenario-grid');
+
+            grid.innerHTML = scenarios.map(s => {
+                const meta = SCENARIO_META[s.scenario] || { icon: '<i data-lucide="refresh-cw" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>', cardClass: '' };
+
+                return `
+                    <div class="scenario-card ${meta.cardClass}">
+                        <div class="scenario-icon">${s.icon || meta.icon}</div>
+                        <h3>${s.name}</h3>
+                        <p class="scenario-desc">${s.description}</p>
+
+                        <div class="scenario-stats">
+                            <div class="scenario-stat">
+                                <div class="scenario-stat-value negative">${s.avg_delta_t}°C</div>
+                                <div class="scenario-stat-label">Avg. Cooling</div>
+                            </div>
+                            <div class="scenario-stat">
+                                <div class="scenario-stat-value negative">${s.max_delta_t}°C</div>
+                                <div class="scenario-stat-label">Max. Cooling</div>
+                            </div>
+                            <div class="scenario-stat">
+                                <div class="scenario-stat-value" style="color: var(--deep-blue);">${s.cells_applied}</div>
+                                <div class="scenario-stat-label">Cells Affected</div>
+                            </div>
+                            <div class="scenario-stat">
+                                <div class="scenario-stat-value" style="color: var(--deep-blue);">${s.total_area_km2}</div>
+                                <div class="scenario-stat-label">Area (km²)</div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span class="feasibility-badge ${s.cost_estimate.toLowerCase()}">${getFeasibilityIcon(s.cost_estimate)} Cost: ${s.cost_estimate}</span>
+                            <span style="font-size: 11px; color: var(--mid);"><i data-lucide="clock" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> ${s.implementation_time}</span>
+                        </div>
+
+                        <p style="font-size: 11px; color: var(--mid); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--gray-bg);">
+                            <strong>Mechanism:</strong> ${s.mechanism}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getFeasibilityIcon(cost) {
+            if (cost === 'Low') return '<i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle; color: #2B8A3E;"></i>';
+            if (cost === 'Medium') return '<i data-lucide="alert-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle; color: #F59F00;"></i>';
+            return '<i data-lucide="x-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle; color: #C92A2A;"></i>';
+        }
+
+        // Load on page ready
+        document.addEventListener('DOMContentLoaded', loadScenarios);
+    </script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Analysis and reports for urban heat mitigation — city statistics, driver attribution, and zone comparison.">
+    <title>Analysis &amp; Reports — Urban Heat Mitigation</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Our CSS -->
+    <link rel="stylesheet" href="/css/styles.css">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <dashboard-layout active-tab="analysis">
+        <!-- ========== PAGE CONTENT ========== -->
+        <div class="page-content">
+            <div class="page-header">
+                <h1><i data-lucide="bar-chart-2" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Analysis & Reports</h1>
+                <p>Overview of urban heat stress patterns, driver attribution, and zone-level analysis for Pune, Maharashtra.</p>
+            </div>
+
+            <!-- Key Metrics Cards -->
+            <div class="analysis-grid" id="metrics-grid">
+                <div class="analysis-card" id="card-avg-temp">
+                    <h3>Average Temperature</h3>
+                    <div class="big-number" id="big-avg-lst">—</div>
+                    <div class="big-label">Mean LST across all grid cells</div>
+                </div>
+                <div class="analysis-card" id="card-max-temp">
+                    <h3>Maximum Temperature</h3>
+                    <div class="big-number danger" id="big-max-lst">—</div>
+                    <div class="big-label">Hottest grid cell recorded</div>
+                </div>
+                <div class="analysis-card" id="card-hotspots">
+                    <h3>Hotspot Cells</h3>
+                    <div class="big-number warning" id="big-hotspots">—</div>
+                    <div class="big-label">Cells exceeding 40°C threshold</div>
+                </div>
+                <div class="analysis-card" id="card-model">
+                    <h3>Model Accuracy</h3>
+                    <div class="big-number success" id="big-r2">—</div>
+                    <div class="big-label">XGBoost R² score on test set</div>
+                </div>
+            </div>
+
+            <!-- HSI Distribution & Global Drivers -->
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; margin-bottom: 32px;">
+                <!-- HSI Distribution Doughnut -->
+                <div class="comparison-section">
+                    <h2 style="color: var(--deep-blue); font-size: 18px;">Heat Stress Distribution</h2>
+                    <p style="color: var(--mid); font-size: 13px; margin-bottom: 16px;">
+                        Classification of grid cells by Heat Stress Index level.
+                    </p>
+                    <div style="height: 300px;">
+                        <canvas id="hsi-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Global Feature Importance -->
+                <div class="comparison-section">
+                    <h2 style="color: var(--deep-blue); font-size: 18px;"><i data-lucide="search" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Global Driver Attribution (SHAP)</h2>
+                    <p style="color: var(--mid); font-size: 13px; margin-bottom: 16px;">
+                        Top features driving urban heat — ranked by mean absolute SHAP value across all cells.
+                    </p>
+                    <div style="height: 350px;">
+                        <canvas id="importance-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zone Comparison Table -->
+            <div class="comparison-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <h2 style="color: var(--deep-blue); font-size: 18px;"><i data-lucide="map" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Zone Comparison</h2>
+                        <p style="color: var(--mid); font-size: 13px;">
+                            Detailed metrics per administrative zone, sorted by average temperature.
+                        </p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="exportTable()">
+                        <i data-lucide="download" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Export CSV
+                    </button>
+                </div>
+                <table class="zone-table" id="zone-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Zone Name</th>
+                            <th>Avg LST (°C)</th>
+                            <th>Max LST (°C)</th>
+                            <th>Cells</th>
+                            <th>Hotspots</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="zone-table-body">
+                        <tr><td colspan="7" style="text-align: center; padding: 32px; color: #999;">Loading zone data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Model Info -->
+            <div class="comparison-section">
+                <h2 style="color: var(--deep-blue); font-size: 18px;"><i data-lucide="bot" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Model Details</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 16px;">
+                    <div>
+                        <h4 style="margin-bottom: 8px;">Architecture</h4>
+                        <p style="font-size: 13px; color: var(--mid); line-height: 1.7;">
+                            <strong>Algorithm:</strong> XGBoost Regressor<br>
+                            <strong>Trees:</strong> 200 estimators<br>
+                            <strong>Max Depth:</strong> 6<br>
+                            <strong>Learning Rate:</strong> 0.1<br>
+                            <strong>Features:</strong> 16
+                        </p>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom: 8px;">Data Sources</h4>
+                        <p style="font-size: 13px; color: var(--mid); line-height: 1.7;">
+                            <strong>LST:</strong> Landsat 8 Band ST_B10<br>
+                            <strong>Vegetation:</strong> Sentinel-2 NDVI<br>
+                            <strong>Climate:</strong> ERA5 Reanalysis<br>
+                            <strong>Buildings:</strong> OpenStreetMap<br>
+                            <strong>LULC:</strong> ESA WorldCover
+                        </p>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom: 8px;">Explainability</h4>
+                        <p style="font-size: 13px; color: var(--mid); line-height: 1.7;">
+                            <strong>Method:</strong> SHAP TreeExplainer<br>
+                            <strong>Type:</strong> Per-cell attribution<br>
+                            <strong>Global:</strong> Mean |SHAP| ranking<br>
+                            <strong>Local:</strong> Top-5 drivers per cell<br>
+                            <strong>Validation:</strong> Spatial cross-validation
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </dashboard-layout>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/layout.js"></script>
+    <script src="/js/map.js"></script>
+    <script src="/js/charts.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        async function loadAnalysis() {
+            try {
+                const [stats, drivers, zones] = await Promise.all([
+                    fetch('/api/stats').then(r => r.json()),
+                    fetch('/api/drivers/global').then(r => r.json()),
+                    fetch('/api/heatmap/zones').then(r => r.json()),
+                ]);
+
+                // Update key metrics
+                if (stats) {
+                    setText('big-avg-lst', `${stats.avg_lst}°C`);
+                    setText('big-max-lst', `${stats.max_lst}°C`);
+                    setText('big-hotspots', stats.hotspot_cells);
+                    if (stats.model_metrics) {
+                        setText('big-r2', stats.model_metrics.r2);
+                    }
+                    if (stats.city) {
+                        const descEl = document.querySelector('.page-header p');
+                        if (descEl) {
+                            descEl.textContent = `Overview of urban heat stress patterns, driver attribution, and zone-level analysis for ${stats.city}.`;
+                        }
+                    }
+
+                    // HSI distribution chart
+                    if (stats.hsi_distribution) {
+                        ChartsModule.createHSIChart('hsi-chart', stats.hsi_distribution);
+                    }
+                }
+
+                // Global importance chart
+                if (drivers && drivers.importance) {
+                    ChartsModule.createGlobalImportanceChart('importance-chart', drivers.importance);
+                }
+
+                // Zone table
+                if (zones && zones.zones) {
+                    renderZoneTable(zones.zones);
+                }
+
+            } catch (err) {
+                console.error('Failed to load analysis data:', err);
+            }
+        }
+
+        function renderZoneTable(zones) {
+            const tbody = document.getElementById('zone-table-body');
+            if (!tbody) return;
+
+            // Sort by avg LST descending
+            zones.sort((a, b) => b.avg_lst - a.avg_lst);
+
+            tbody.innerHTML = zones.map((z, i) => {
+                const status = z.avg_lst > 40 ? '<span style="color: #A50026; font-weight: 700;"><i data-lucide="x-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle; color: #C92A2A;"></i> Critical</span>'
+                    : z.avg_lst > 37 ? '<span style="color: #F46D43; font-weight: 700;"><i data-lucide="alert-triangle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle; color: #F59F00;"></i> Warning</span>'
+                    : z.avg_lst > 34 ? '<span style="color: #C0550C; font-weight: 700;"><i data-lucide="alert-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle; color: #F59F00;"></i> Monitor</span>'
+                    : '<span style="color: #1B7A78; font-weight: 700;"><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle; color: #2B8A3E;"></i> Normal</span>';
+
+                return `
+                    <tr>
+                        <td style="font-weight: 700; color: var(--mid);">#${i + 1}</td>
+                        <td style="font-weight: 600;">${z.zone_name}</td>
+                        <td class="temp-cell" style="color: ${getLSTColor(z.avg_lst)};">${z.avg_lst}°C</td>
+                        <td class="temp-cell" style="color: ${getLSTColor(z.max_lst)};">${z.max_lst}°C</td>
+                        <td>${z.cell_count}</td>
+                        <td style="font-weight: 700; color: ${z.hotspot_count > 0 ? '#A50026' : '#999'};">${z.hotspot_count}</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getLSTColor(lst) {
+            if (lst < 30) return '#4575B4';
+            if (lst < 35) return '#1B7A78';
+            if (lst < 40) return '#C0550C';
+            if (lst < 45) return '#D73027';
+            return '#A50026';
+        }
+
+        function setText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        }
+
+        function exportTable() {
+            const table = document.getElementById('zone-table');
+            if (!table) return;
+
+            let csv = [];
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('th, td');
+                const rowData = Array.from(cols).map(col => {
+                    return '"' + col.textContent.replace(/"/g, '""').trim() + '"';
+                });
+                csv.push(rowData.join(','));
+            });
+
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'zone_analysis.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Load on page ready
+        document.addEventListener('DOMContentLoaded', loadAnalysis);
+    </script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

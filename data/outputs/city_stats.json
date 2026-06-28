@@ -1,0 +1,31 @@
+{
+  "city": "Kolhapur, Karvir, Kolhapur, Maharashtra, 416003, India",
+  "state": "Global",
+  "total_cells": 1640,
+  "grid_resolution": "250m \u00d7 250m",
+  "data_date": "June 2026 (Live + Proxies)",
+  "avg_lst": 30.4,
+  "max_lst": 40.9,
+  "min_lst": 17.0,
+  "hotspot_cells": 193,
+  "hsi_distribution": {
+    "Cool Zone": 808,
+    "Warm Zone": 465,
+    "Hot Zone": 199,
+    "Mild Zone": 168
+  },
+  "model_metrics": {
+    "rmse": 0.899,
+    "mae": 0.713,
+    "r2": 0.9708
+  },
+  "zones": [
+    "Kasaba Bawada",
+    "Mangalwar Peth",
+    "Rajarampuri",
+    "Shahu Market Yard",
+    "Shenda Park",
+    "Shiroli",
+    "Shivaji Park"
+  ]
+}

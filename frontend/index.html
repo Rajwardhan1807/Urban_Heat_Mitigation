@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-powered Urban Heat Mitigation Dashboard for detecting heat hotspots, analyzing drivers, and simulating cooling interventions in Pune, India.">
+    <title>Urban Heat Mitigation — AI Dashboard</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Our CSS -->
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <dashboard-layout active-tab="dashboard">
+        <!-- ========== MAP CONTAINER ========== -->
+        <main class="map-container">
+            <!-- Stats Cards -->
+            <div class="map-stats" id="map-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Avg. Temperature</div>
+                    <div class="stat-value" id="stat-avg-lst">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Max Temperature</div>
+                    <div class="stat-value hot" id="stat-max-lst">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Hotspot Cells</div>
+                    <div class="stat-value warning" id="stat-hotspots">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Cells</div>
+                    <div class="stat-value" id="stat-total">—</div>
+                    <div class="stat-sublabel" id="stat-total-area" style="font-size: 11px; opacity: 0.8; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">—</div>
+                </div>
+            </div>
+
+            <!-- The Map -->
+            <div id="map"></div>
+        </main>
+    </dashboard-layout>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Application Scripts -->
+    <script src="/js/layout.js"></script>
+    <script src="/js/map.js"></script>
+    <script src="/js/charts.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
