@@ -1,82 +1,82 @@
 [
   {
     "feature":"building_density",
-    "mean_abs_shap":6.3238625526,
-    "mean_shap":-1.2443740368
-  },
-  {
-    "feature":"air_temp",
-    "mean_abs_shap":0.7591518164,
-    "mean_shap":0.7591518164
+    "mean_abs_shap":6.2356104851,
+    "mean_shap":-1.2608588934
   },
   {
     "feature":"svf",
-    "mean_abs_shap":0.7476685643,
-    "mean_shap":-0.0737682655
+    "mean_abs_shap":0.7087327242,
+    "mean_shap":-0.0946765095
   },
   {
     "feature":"wind_speed",
-    "mean_abs_shap":0.6336632967,
-    "mean_shap":-0.6336632967
+    "mean_abs_shap":0.4681982994,
+    "mean_shap":-0.4662335217
   },
   {
     "feature":"ndvi",
-    "mean_abs_shap":0.5372071862,
-    "mean_shap":-0.216770649
+    "mean_abs_shap":0.4461606741,
+    "mean_shap":-0.1907096505
+  },
+  {
+    "feature":"air_temp",
+    "mean_abs_shap":0.4358404279,
+    "mean_shap":-0.2166476399
   },
   {
     "feature":"bldg_density_x_wind",
-    "mean_abs_shap":0.4136432409,
-    "mean_shap":0.1524346769
-  },
-  {
-    "feature":"ndwi",
-    "mean_abs_shap":0.2949186563,
-    "mean_shap":0.1262184381
+    "mean_abs_shap":0.4006375372,
+    "mean_shap":0.1566265225
   },
   {
     "feature":"ndvi_x_albedo",
-    "mean_abs_shap":0.276502192,
-    "mean_shap":-0.082171835
+    "mean_abs_shap":0.2722648382,
+    "mean_shap":-0.0872492641
+  },
+  {
+    "feature":"ndwi",
+    "mean_abs_shap":0.254127115,
+    "mean_shap":0.13711299
   },
   {
     "feature":"building_height",
-    "mean_abs_shap":0.1894661486,
-    "mean_shap":0.0277637728
+    "mean_abs_shap":0.1834529787,
+    "mean_shap":0.015192315
   },
   {
     "feature":"humidity",
-    "mean_abs_shap":0.1699440479,
-    "mean_shap":0.1656517386
+    "mean_abs_shap":0.1096739322,
+    "mean_shap":-0.081065096
   },
   {
     "feature":"lulc_vegetation",
-    "mean_abs_shap":0.0957106799,
-    "mean_shap":-0.0337929539
+    "mean_abs_shap":0.0920886025,
+    "mean_shap":-0.0276801642
   },
   {
     "feature":"albedo",
-    "mean_abs_shap":0.0679989681,
-    "mean_shap":-0.0105233211
+    "mean_abs_shap":0.0680956841,
+    "mean_shap":-0.0119325193
   },
   {
     "feature":"lulc_built_up",
-    "mean_abs_shap":0.0042734277,
-    "mean_shap":0.0041375277
+    "mean_abs_shap":0.0038154367,
+    "mean_shap":0.0036590414
   },
   {
     "feature":"lulc_road",
-    "mean_abs_shap":0.0004433893,
-    "mean_shap":-0.0003538347
+    "mean_abs_shap":0.0014155477,
+    "mean_shap":-0.0001957673
   },
   {
     "feature":"lulc_water",
-    "mean_abs_shap":0.0002091774,
-    "mean_shap":0.0001907643
+    "mean_abs_shap":0.000325568,
+    "mean_shap":0.0003076518
   },
   {
     "feature":"lulc_bare",
-    "mean_abs_shap":0.000200558,
-    "mean_shap":0.0000346907
+    "mean_abs_shap":0.0001354853,
+    "mean_shap":0.0000013798
   }
 ]

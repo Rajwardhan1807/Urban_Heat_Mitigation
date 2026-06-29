@@ -4,15 +4,15 @@
   "total_cells": 1491,
   "grid_resolution": "250m \u00d7 250m",
   "data_date": "June 2026 (Live + Proxies)",
-  "avg_lst": 30.4,
-  "max_lst": 41.0,
-  "min_lst": 16.9,
-  "hotspot_cells": 191,
+  "avg_lst": 29.3,
+  "max_lst": 40.9,
+  "min_lst": 15.2,
+  "hotspot_cells": 17,
   "hsi_distribution": {
-    "Cool Zone": 723,
-    "Warm Zone": 419,
-    "Hot Zone": 195,
-    "Mild Zone": 154
+    "Cool Zone": 782,
+    "Warm Zone": 569,
+    "Mild Zone": 123,
+    "Hot Zone": 17
   },
   "model_metrics": {
     "rmse": 0.899,

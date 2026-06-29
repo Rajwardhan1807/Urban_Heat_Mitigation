@@ -7,13 +7,13 @@
     "mechanism": "Increased evapotranspiration (LE) + reduced sensible heat (H) via shading",
     "cost_estimate": "Medium",
     "implementation_time": "2-5 years",
-    "cells_eligible": 1256,
-    "cells_applied": 1256,
+    "cells_eligible": 1273,
+    "cells_applied": 1273,
     "coverage_pct": 100,
-    "avg_delta_t": -0.96,
-    "max_delta_t": -3.08,
+    "avg_delta_t": -0.58,
+    "max_delta_t": -2.94,
     "min_delta_t": 1.19,
-    "total_area_km2": 78.5
+    "total_area_km2": 79.56
   },
   {
     "scenario": "cool_roofs",
@@ -23,13 +23,13 @@
     "mechanism": "Increased surface albedo reduces net radiation (Rn)",
     "cost_estimate": "Low",
     "implementation_time": "6-12 months",
-    "cells_eligible": 896,
-    "cells_applied": 896,
+    "cells_eligible": 900,
+    "cells_applied": 900,
     "coverage_pct": 100,
-    "avg_delta_t": -0.21,
-    "max_delta_t": -0.82,
+    "avg_delta_t": -0.15,
+    "max_delta_t": -1.07,
     "min_delta_t": 0.33,
-    "total_area_km2": 56.0
+    "total_area_km2": 56.25
   },
   {
     "scenario": "reflective_pavements",
@@ -39,13 +39,13 @@
     "mechanism": "Increased albedo reduces sensible heat flux (H)",
     "cost_estimate": "Medium",
     "implementation_time": "1-3 years",
-    "cells_eligible": 115,
-    "cells_applied": 115,
+    "cells_eligible": 111,
+    "cells_applied": 111,
     "coverage_pct": 100,
-    "avg_delta_t": -0.16,
-    "max_delta_t": -0.51,
-    "min_delta_t": 0.26,
-    "total_area_km2": 7.19
+    "avg_delta_t": -0.07,
+    "max_delta_t": -0.3,
+    "min_delta_t": 0.24,
+    "total_area_km2": 6.94
   },
   {
     "scenario": "green_roofs",
@@ -55,12 +55,12 @@
     "mechanism": "Combined evapotranspiration (LE) + albedo + insulation effect",
     "cost_estimate": "High",
     "implementation_time": "1-2 years",
-    "cells_eligible": 896,
-    "cells_applied": 896,
+    "cells_eligible": 900,
+    "cells_applied": 900,
     "coverage_pct": 100,
-    "avg_delta_t": -0.96,
-    "max_delta_t": -1.96,
-    "min_delta_t": -0.02,
-    "total_area_km2": 56.0
+    "avg_delta_t": -0.51,
+    "max_delta_t": -1.69,
+    "min_delta_t": 0.64,
+    "total_area_km2": 56.25
   }
 ]
