@@ -7,13 +7,13 @@
     "mechanism": "Increased evapotranspiration (LE) + reduced sensible heat (H) via shading",
     "cost_estimate": "Medium",
     "implementation_time": "2-5 years",
-    "cells_eligible": 1399,
-    "cells_applied": 1399,
+    "cells_eligible": 1256,
+    "cells_applied": 1256,
     "coverage_pct": 100,
     "avg_delta_t": -0.96,
-    "max_delta_t": -3.31,
-    "min_delta_t": 1.15,
-    "total_area_km2": 87.44
+    "max_delta_t": -3.08,
+    "min_delta_t": 1.19,
+    "total_area_km2": 78.5
   },
   {
     "scenario": "cool_roofs",
@@ -23,13 +23,13 @@
     "mechanism": "Increased surface albedo reduces net radiation (Rn)",
     "cost_estimate": "Low",
     "implementation_time": "6-12 months",
-    "cells_eligible": 1000,
-    "cells_applied": 1000,
+    "cells_eligible": 896,
+    "cells_applied": 896,
     "coverage_pct": 100,
-    "avg_delta_t": -0.2,
-    "max_delta_t": -1.05,
-    "min_delta_t": 0.41,
-    "total_area_km2": 62.5
+    "avg_delta_t": -0.21,
+    "max_delta_t": -0.82,
+    "min_delta_t": 0.33,
+    "total_area_km2": 56.0
   },
   {
     "scenario": "reflective_pavements",
@@ -42,9 +42,9 @@
     "cells_eligible": 115,
     "cells_applied": 115,
     "coverage_pct": 100,
-    "avg_delta_t": -0.11,
-    "max_delta_t": -0.48,
-    "min_delta_t": 0.33,
+    "avg_delta_t": -0.16,
+    "max_delta_t": -0.51,
+    "min_delta_t": 0.26,
     "total_area_km2": 7.19
   },
   {
@@ -55,12 +55,12 @@
     "mechanism": "Combined evapotranspiration (LE) + albedo + insulation effect",
     "cost_estimate": "High",
     "implementation_time": "1-2 years",
-    "cells_eligible": 1000,
-    "cells_applied": 1000,
+    "cells_eligible": 896,
+    "cells_applied": 896,
     "coverage_pct": 100,
-    "avg_delta_t": -0.87,
+    "avg_delta_t": -0.96,
     "max_delta_t": -1.96,
-    "min_delta_t": 0.17,
-    "total_area_km2": 62.5
+    "min_delta_t": -0.02,
+    "total_area_km2": 56.0
   }
 ]

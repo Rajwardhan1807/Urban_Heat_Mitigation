@@ -110,12 +110,76 @@ const MapModule = (() => {
             onEachFeature: (feature, layer) => {
                 const props = feature.properties;
 
+                const gridId = props.cell_id || "N/A";
+                const temp = (props.predicted_lst !== undefined ? props.predicted_lst : props.lst).toFixed(1);
+                
+                let score = 5.0;
+                const lstVal = props.predicted_lst !== undefined ? props.predicted_lst : props.lst || 35;
+                score = Math.max(1, Math.min(10, ((lstVal - 25) / 20) * 9 + 1));
+                const heatRisk = `${score.toFixed(1)}/10`;
+
+                const ndviVal = props.ndvi !== undefined ? props.ndvi : 0.0;
+                const ndvi = `${ndviVal.toFixed(3)}`;
+                const ndbiVal = Math.max(-1.0, Math.min(1.0, (props.building_density || 0) / 125.0 - 1.0));
+                const ndbi = `${ndbiVal.toFixed(2)}`;
+
+                const albedo = props.albedo !== undefined ? props.albedo.toFixed(3) : "N/A";
+                const svf = props.svf !== undefined ? props.svf.toFixed(3) : "N/A";
+                const airTemp = props.air_temp !== undefined ? `${props.air_temp.toFixed(1)}°C` : "N/A";
+                const humidity = props.humidity !== undefined ? `${props.humidity.toFixed(1)}%` : "N/A";
+                const windSpeed = props.wind_speed !== undefined ? `${props.wind_speed.toFixed(1)} m/s` : "N/A";
+                const popDensity = "Not Available";
+                const bldgDensity = props.building_density !== undefined ? `${props.building_density.toFixed(1)}%` : "0.0%";
+                const bldgHeight = props.building_height !== undefined ? `${props.building_height.toFixed(1)}m` : "N/A";
+                const lulcClass = props.lulc_class || "N/A";
+
+                let intervention = props.recommended_intervention;
+                if (!intervention) {
+                    const cls = (props.hsi_class || "").toLowerCase();
+                    if (cls.includes("extreme") || cls.includes("hot") || cls.includes("warm")) {
+                        intervention = "Cool Roofs & Urban Greening";
+                    } else if (cls.includes("mild")) {
+                        intervention = "Green Roofs & Reflective Pavements";
+                    } else {
+                        intervention = "None Required (Stable Zone)";
+                    }
+                }
+
+                const coolingPotentialVal = (0.5 + (props.building_density || 0) * 0.01 + (1 - (props.ndvi || 0)) * 0.5);
+                const estCooling = `-${coolingPotentialVal.toFixed(1)}°C`;
+
+                const driversHTML = (props.top_drivers || []).map((d) => {
+                    const featName = d.feature.replace(/_/g, " ");
+                    const sign = d.shap_value > 0 ? "+" : "";
+                    const colorClass = d.direction === "heating" ? "heating" : "cooling";
+                    return `<div class="heat-tooltip-driver">` +
+                        `<span class="heat-tooltip-driver-name">${featName}</span>` +
+                        `<span class="heat-tooltip-driver-val ${colorClass}">${sign}${d.shap_value.toFixed(2)}°C</span>` +
+                    `</div>`;
+                }).join("");
+
                 // Hover tooltip
                 layer.bindTooltip(
-                    `<strong>${props.zone_name}</strong><br>` +
-                    `LST: <strong>${props.lst}°C</strong><br>` +
-                    `Class: ${props.hsi_class}`,
-                    { sticky: true, className: 'heat-tooltip' }
+                    `<div class="heat-tooltip-header">` +
+                      `<span>${props.zone_name || "Zone"}</span>` +
+                      `<span class="heat-tooltip-hsi" style="background-color: ${props.hsi_color || '#ccc'}; color: #fff;">${props.hsi_class}</span>` +
+                    `</div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Grid ID:</span><span class="heat-tooltip-value">${gridId}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Predicted LST:</span><span class="heat-tooltip-value" style="color: #fca5a5;">${temp}°C</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Heat Risk Score:</span><span class="heat-tooltip-value">${heatRisk}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">NDVI (Vegetation):</span><span class="heat-tooltip-value">${ndvi}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">NDBI (Built-up):</span><span class="heat-tooltip-value">${ndbi}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Albedo / SVF:</span><span class="heat-tooltip-value">${albedo} / ${svf}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Air Temp / Humidity:</span><span class="heat-tooltip-value">${airTemp} / ${humidity}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Wind Speed:</span><span class="heat-tooltip-value">${windSpeed}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Building Density:</span><span class="heat-tooltip-value">${bldgDensity}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Building Height:</span><span class="heat-tooltip-value">${bldgHeight}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Pop. Density / LULC:</span><span class="heat-tooltip-value">${popDensity} / ${lulcClass}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">AI Intervention:</span><span class="heat-tooltip-value" style="color: #60a5fa; font-size: 10px; text-align: right;">${intervention}</span></div>` +
+                    `<div class="heat-tooltip-row"><span class="heat-tooltip-label">Cooling Potential:</span><span class="heat-tooltip-value" style="color: #34d399;">${estCooling}</span></div>` +
+                    `<div class="heat-tooltip-driver-title">Key Heat Drivers (SHAP)</div>` +
+                    (driversHTML || `<div style="font-size: 10px; color: #9ca3af;">No drivers available</div>`),
+                    { sticky: true, className: "heat-tooltip", direction: "auto", opacity: 0.95 }
                 );
 
                 // Click handler
@@ -186,24 +250,14 @@ const MapModule = (() => {
 
         console.log(`[MapModule.renderZonesLayer] Rendering city zones layer. Feature count: ${geojsonData ? (geojsonData.features ? geojsonData.features.length : 0) : 0}`);
         zonesLayer = L.geoJSON(geojsonData, {
+            interactive: false,
             style: () => ({
                 fillColor: 'transparent',
                 fillOpacity: 0,
                 color: '#F39C12',
                 weight: 2,
                 dashArray: '5, 5'
-            }),
-            onEachFeature: (feature, layer) => {
-                const name = feature.properties.zone_name || 'Zone';
-                layer.bindTooltip(`<strong>${name}</strong>`, { sticky: true, className: 'zone-tooltip' });
-                
-                layer.on('mouseover', () => {
-                    layer.setStyle({ fillColor: '#F39C12', fillOpacity: 0.1 });
-                });
-                layer.on('mouseout', () => {
-                    layer.setStyle({ fillColor: 'transparent', fillOpacity: 0 });
-                });
-            }
+            })
         }).addTo(map);
         console.log("[MapModule.renderZonesLayer] Zones Layer render status: SUCCESS (added to map)");
 

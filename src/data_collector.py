@@ -11,8 +11,8 @@ import time
 from .geom_extractor import generate_voronoi_zones
 from .utils import OUTPUTS_DIR
 
-def generate_grid_for_bbox(bbox, step=0.0025):
-    """Generate a spatial grid for a given bounding box."""
+def generate_grid_for_bbox(bbox, step=0.0025, city_poly=None):
+    """Generate a spatial grid for a given bounding box, clipped to city boundary."""
     lat_min, lat_max, lon_min, lon_max = bbox
     # Ensure lat_min < lat_max
     if lat_min > lat_max: lat_min, lat_max = lat_max, lat_min
@@ -28,19 +28,48 @@ def generate_grid_for_bbox(bbox, step=0.0025):
         center_lon = (lon_min + lon_max) / 2
         lon_min, lon_max = center_lon - 0.05, center_lon + 0.05
 
-    lats = np.arange(lat_min, lat_max, step)
-    lons = np.arange(lon_min, lon_max, step)
+    n_lats = int(round((lat_max - lat_min) / step))
+    n_lons = int(round((lon_max - lon_min) / step))
 
+    from shapely.geometry import box
+    
     cells = []
-    for lat in lats:
-        for lon in lons:
+    for i in range(n_lats):
+        for j in range(n_lons):
+            lat = round(lat_min + i * step, 4)
+            lon = round(lon_min + j * step, 4)
+            lat_max_c = round(lat + step, 4)
+            lon_max_c = round(lon + step, 4)
+            
+            cell_box = box(lon, lat, lon_max_c, lat_max_c)
+            
+            if city_poly:
+                try:
+                    clipped_geom = cell_box.intersection(city_poly)
+                    if clipped_geom.is_empty or not clipped_geom.is_valid:
+                        continue
+                    if clipped_geom.geom_type not in ["Polygon", "MultiPolygon"]:
+                        continue
+                    geom = clipped_geom
+                except Exception as e:
+                    print(f"[data_collector] Intersection failed for cell {lat}, {lon}: {e}")
+                    continue
+            else:
+                geom = cell_box
+                
             cells.append({
                 "cell_id": f"cell_{lat:.4f}_{lon:.4f}",
-                "lat": round(lat, 4),
-                "lon": round(lon, 4),
-                "lat_max": round(lat + step, 4),
-                "lon_max": round(lon + step, 4),
+                "lat": lat,
+                "lon": lon,
+                "lat_max": lat_max_c,
+                "lon_max": lon_max_c,
+                "geometry": geom
             })
+            
+    if not cells:
+        print("[data_collector] Warning: Clipping excluded all grid cells. Generating unclipped grid.")
+        return generate_grid_for_bbox(bbox, step, city_poly=None)
+        
     return pd.DataFrame(cells), (lat_min, lat_max, lon_min, lon_max)
 
 def fetch_live_weather(lat, lon):
@@ -213,25 +242,55 @@ def assign_features(grid_df, osm_elements, weather_data, query_name="City Zone")
 
     return grid_df, zones
 
+def fetch_city_boundary(location_name):
+    """Fetch the administrative boundary polygon of the city using Nominatim."""
+    from geopy.geocoders import Nominatim
+    from shapely.geometry import shape
+    
+    queries = [location_name]
+    if "," in location_name:
+        parts = [p.strip() for p in location_name.split(",")]
+        if len(parts) >= 2:
+            queries.append(f"{parts[0]}, {parts[1]}")
+        queries.append(parts[0])
+        
+    for q in queries:
+        try:
+            print(f"[data_collector] Searching Nominatim boundary for query: '{q}'")
+            geolocator_instance = Nominatim(user_agent="urban-heat-mvp-pipeline-boundary")
+            locs = geolocator_instance.geocode(q, exactly_one=False, geometry="geojson", timeout=15)
+            if locs:
+                for loc in locs:
+                    osm_type = loc.raw.get("osm_type")
+                    geom_type = loc.raw.get("geojson", {}).get("type")
+                    if osm_type == "relation" and geom_type in ["Polygon", "MultiPolygon"]:
+                        poly = shape(loc.raw["geojson"])
+                        print(f"[data_collector] Found city boundary relation for query '{q}': {loc.address}")
+                        return poly
+                for loc in locs:
+                    geom_type = loc.raw.get("geojson", {}).get("type")
+                    if geom_type in ["Polygon", "MultiPolygon"]:
+                        poly = shape(loc.raw["geojson"])
+                        print(f"[data_collector] Found fallback boundary polygon for query '{q}': {loc.address}")
+                        return poly
+        except Exception as e:
+            print(f"[data_collector] Nominatim boundary query '{q}' error: {e}")
+            
+    print(f"[data_collector] Could not retrieve boundary polygon for '{location_name}'. Using bbox fallback.")
+    return None
+
 def build_geojson(grid_df):
     """Convert the grid DataFrame into a GeoJSON FeatureCollection."""
     features = []
+    from shapely.geometry import mapping
     for _, row in grid_df.iterrows():
+        geom = row["geometry"]
         feature = {
             "type": "Feature",
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[
-                    [row["lon"], row["lat"]],
-                    [row["lon_max"], row["lat"]],
-                    [row["lon_max"], row["lat_max"]],
-                    [row["lon"], row["lat_max"]],
-                    [row["lon"], row["lat"]],
-                ]]
-            },
+            "geometry": mapping(geom),
             "properties": {
                 k: v for k, v in row.items()
-                if k not in ["lat_max", "lon_max"]
+                if k not in ["lat_max", "lon_max", "geometry"]
             }
         }
         features.append(feature)
@@ -244,7 +303,8 @@ def collect_data(output_dir, bbox=None, location_name="Pune"):
         bbox = [18.45, 18.58, 73.78, 73.92]
         
     print(f"Generating spatial grid for {location_name}...")
-    grid, final_bbox = generate_grid_for_bbox(bbox)
+    city_poly = fetch_city_boundary(location_name)
+    grid, final_bbox = generate_grid_for_bbox(bbox, city_poly=city_poly)
     
     center_lat = (final_bbox[0] + final_bbox[1]) / 2
     center_lon = (final_bbox[2] + final_bbox[3]) / 2
@@ -269,7 +329,7 @@ def collect_data(output_dir, bbox=None, location_name="Pune"):
 
     # Save CSV
     csv_path = os.path.join(output_dir, "feature_matrix.csv")
-    grid.to_csv(csv_path, index=False)
+    grid.drop(columns=["geometry"], errors="ignore").to_csv(csv_path, index=False)
 
     # Save GeoJSON
     geojson = build_geojson(grid)

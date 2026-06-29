@@ -114,7 +114,7 @@ def simulate_scenario(model, features_df, feature_cols, scenario_name, coverage_
     new_lst = model.predict(X_modified)
 
     # Compute results
-    results = features_df[["cell_id", "lat", "lon", "zone_name"]].copy()
+    results = features_df[["cell_id", "lat", "lon", "zone_name", "geometry"]].copy()
     results["baseline_lst"] = features_df["lst"].values
     results["predicted_lst"] = np.round(new_lst, 2)
     results["delta_t"] = np.round(new_lst - features_df["lst"].values, 2)
@@ -204,19 +204,12 @@ def run_all_scenarios(model, features_df, feature_cols, output_dir):
 def _results_to_geojson(results_df):
     """Convert scenario results to GeoJSON."""
     features = []
+    from shapely.geometry import mapping
     for _, row in results_df.iterrows():
-        lat, lon = row["lat"], row["lon"]
-        step = 0.0025
+        geom = row["geometry"]
         feature = {
             "type": "Feature",
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[
-                    [lon, lat], [lon + step, lat],
-                    [lon + step, lat + step], [lon, lat + step],
-                    [lon, lat],
-                ]]
-            },
+            "geometry": mapping(geom),
             "properties": {
                 "cell_id": row["cell_id"],
                 "zone_name": row["zone_name"],

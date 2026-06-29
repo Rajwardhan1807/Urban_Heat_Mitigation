@@ -131,16 +131,11 @@ def main():
             "lulc_class": row["lulc_class"],
             "top_drivers": row["top_drivers"],
         }
+        from shapely.geometry import mapping
+        geom = row["geometry"]
         feature = {
             "type": "Feature",
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[
-                    [lon, lat], [lon + step, lat],
-                    [lon + step, lat + step], [lon, lat + step],
-                    [lon, lat],
-                ]]
-            },
+            "geometry": mapping(geom),
             "properties": props,
         }
         pred_features.append(feature)
@@ -183,6 +178,7 @@ def main():
     scenario_features["lat"] = grid_df["lat"].values
     scenario_features["lon"] = grid_df["lon"].values
     scenario_features["zone_name"] = grid_df["zone_name"].values
+    scenario_features["geometry"] = grid_df["geometry"].values
 
     summaries = run_all_scenarios(model, scenario_features, FEATURE_COLS, SCENARIOS_DIR)
 
